@@ -20,7 +20,7 @@ with st.sidebar:
         api_key = st.text_input("Cole sua Google API Key:", type="password")
     
     st.divider()
-    student_level = st.selectbox("Nível:", ["A1 (Iniciante)", "B1 (Intermediário)", "C1 (Avançado)"])
+    student_level = st.selectbox("Nível:", ["A1 (Iniciante)", "A2 (Básico)","B1 (Intermediário)","B2 (Intermediário superior)", "C1 (Avançado)"])
     student_goal = st.text_input("Objetivo:", "Travel and order food")
     
     if st.button("Reiniciar Conversa"):
