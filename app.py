@@ -56,7 +56,7 @@ if "chat_session" not in st.session_state or st.session_state.chat_session is No
     
     try:
         st.session_state.chat_session = client.chats.create(
-            model="gemini-flash-latest",
+            model="gemini-1.5-flash",
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 temperature=0.7
