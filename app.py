@@ -47,18 +47,19 @@ except Exception as e:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "chat_session" not in st.session_state or st.session_state.chat_session is None:
-    system_instruction = f"""
-    Act as an English Teacher. Level: {student_level}. Goal: {student_goal}.
-    Rules: Correct mistakes, be kind, ask questions.
-    Start with a question.
-    """
+# Definindo a personalidade "na marra" através do histórico
+if "chat" not in st.session_state:
+    # Criamos um histórico falso onde você já pediu para ela ser professora
+    historico_inicial = [
+        {"role": "user", "parts": "You are an English Teacher. Correct my mistakes and help me learn."},
+        {"role": "model", "parts": "Understood! I am your English Teacher ready to help."}
+    ]
+    st.session_state.chat = model.start_chat(history=historico_inicial)
     
     try:
         st.session_state.chat_session = client.chats.create(
             model="gemma-3-27b-it",
             config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
                 temperature=0.7
             )
         )
