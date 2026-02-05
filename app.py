@@ -6,12 +6,12 @@ from google.genai import types
 st.set_page_config(page_title="AI English Tutor", page_icon="🎓")
 st.title("🎓 English Tutor Agent")
 
-# --- Função para Resetar o Chat (Evita o erro NoneType) ---
+# --- Função para Resetar o Chat ---
 def reset_chat():
     st.session_state.chat_session = None
     st.session_state.messages = []
 
-# --- 2. Barra Lateral Inteligente ---
+# --- 2. Barra Lateral ---
 with st.sidebar:
     st.header("Configuração")
     
@@ -23,7 +23,7 @@ with st.sidebar:
     
     st.divider()
     
-    # IMPORTANTE: O on_change=reset_chat faz o app "acordar" quando você muda o nível
+    # Widgets com reset automático ao mudar
     student_level = st.selectbox(
         "Nível do Aluno:", 
         ["A1 (Iniciante)", "A2 (Básico)", "B1 (Intermediário)", "B2 (Intermediário Superior)", "C1 (Avançado)"],
@@ -32,7 +32,7 @@ with st.sidebar:
     
     student_goal = st.text_input(
         "Objetivo da Aula:", 
-        "Conversação e correções",
+        "Conversation and corrections",
         on_change=reset_chat
     )
     
@@ -55,14 +55,18 @@ except Exception as e:
     st.error(f"Erro na chave: {e}")
     st.stop()
 
-# --- 4. Cérebro da IA (Inicialização Segura) ---
+# --- 4. Cérebro da IA (CORREÇÃO AQUI) ---
+
+# Primeiro garantimos que as variáveis existem na memória
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Se o chat estiver vazio (ou foi resetado), criamos de novo
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = None
+
+# Agora sim podemos verificar se está None com segurança
 if st.session_state.chat_session is None:
     
-    # --- O SEGREDO ESTÁ AQUI: PROMPT MELHORADO ---
     prompt_do_professor = (
         f"Context: You are a friendly bilingual English Teacher for Brazilian students. "
         f"Student Level: {student_level}. "
@@ -75,7 +79,6 @@ if st.session_state.chat_session is None:
     )
 
     try:
-        # Iniciamos a Gemma
         st.session_state.chat_session = client.chats.create(
             model="gemma-3-27b-it",
             config=types.GenerateContentConfig(
@@ -88,13 +91,12 @@ if st.session_state.chat_session is None:
             ]
         )
         
-        # Mensagem inicial automática (baseada no nível)
+        # Boas-vindas
         if len(st.session_state.messages) == 0:
             if "A1" in student_level or "A2" in student_level:
                 msg_inicial = "Hello! Eu sou seu professor. Podemos falar em Inglês, mas explicarei em Português se precisar. Let's start?"
             else:
                 msg_inicial = "Hello! I'm ready to help you practice. Shall we begin?"
-                
             st.session_state.messages.append({"role": "assistant", "content": msg_inicial})
             
     except Exception as e:
@@ -109,7 +111,6 @@ if prompt := st.chat_input("Sua resposta..."):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # Verificação de segurança para não dar o erro NoneType
     if st.session_state.chat_session is not None:
         try:
             response = st.session_state.chat_session.send_message(prompt)
@@ -121,4 +122,4 @@ if prompt := st.chat_input("Sua resposta..."):
             if st.button("Tentar Reconectar"):
                 st.rerun()
     else:
-        st.warning("A conexão caiu. Clique em 'Reiniciar Conversa' na barra lateral.")
+        st.warning("A conexão caiu. Clique em 'Reiniciar Conversa'.")
