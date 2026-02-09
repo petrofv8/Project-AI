@@ -13,13 +13,16 @@ st.markdown("""
     <style>
     /* Estilização das bolhas de chat */
     .stChatMessage { border-radius: 20px; padding: 15px; margin-bottom: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
+    
     /* Botões da barra lateral */
     .stButton>button { border-radius: 10px; font-weight: bold; transition: 0.3s; }
     .stButton>button:hover { transform: scale(1.02); }
-    /* Esconder o menu superior do Streamlit para parecer um App */
+    
+    /* Esconder APENAS o rodapé e o menu de opções do desenvolvedor, mantendo o cabeçalho visível */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    
+    /* REMOVI O 'header {visibility: hidden;}' DAQUI */
     </style>
     """, unsafe_allow_html=True)
 
