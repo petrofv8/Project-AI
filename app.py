@@ -9,22 +9,21 @@ import base64
 # --- 1. Design & CSS (Aparência Moderna) ---
 st.set_page_config(page_title="Petro AI English", page_icon="🇬🇧", layout="centered",initial_sidebar_state="expanded")
 
-st.markdown("""
+st.markdown(
     <style>
+    /* Forçar a barra lateral a ser visível e ajustar o botão de abrir */
+    [data-testid="stSidebarNav"] {visibility: visible !important;}
+    
+    /* Garante que o botão de fechar/abrir (setinha) apareça com cor forte */
+    .st-emotion-cache-6q9sum.edgvbvh3 { color: #4CAF50 !important; }
+
     /* Estilização das bolhas de chat */
     .stChatMessage { border-radius: 20px; padding: 15px; margin-bottom: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
     
     /* Botões da barra lateral */
-    .stButton>button { border-radius: 10px; font-weight: bold; transition: 0.3s; }
-    .stButton>button:hover { transform: scale(1.02); }
-    
-    /* Esconder APENAS o rodapé e o menu de opções do desenvolvedor, mantendo o cabeçalho visível */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* REMOVI O 'header {visibility: hidden;}' DAQUI */
+    .stButton>button { border-radius: 10px; font-weight: bold; transition: 0.3s; background-color: #4CAF50; color: white; }
     </style>
-    """, unsafe_allow_html=True)
+    , unsafe_allow_html=True)
 
 # --- 2. Funções de Áudio ---
 def text_to_speech(text):
