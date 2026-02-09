@@ -7,7 +7,7 @@ import os
 import base64
 
 # --- 1. Design & CSS (Aparência Moderna) ---
-st.set_page_config(page_title="Petro AI English", page_icon="🇬🇧", layout="centered")
+st.set_page_config(page_title="Petro AI English", page_icon="🇬🇧", layout="centered",initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
