@@ -116,61 +116,65 @@ if st.session_state.chat_session is None:
         st.error(f"Erro: {e}")
 
 # --- 6. INTERFACE DE CHAT ---
-# --- 6. INTERFACE DE CHAT E VOZ (Versão Estabilizada) ---
+# --- 6. INTERFACE DE CHAT E VOZ (Versão "Force Roleplay") ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 st.write("---")
-
-# 1. Primeiro, criamos o componente de microfone
-# Importante: a variável audio_text PRECISA existir, mesmo que vazia
 audio_text = speech_to_text(start_prompt="🎤 Falar", stop_prompt="⏹️ Parar", language='en-US', key='speech')
-
-# 2. Criamos a caixa de texto
 input_text = st.chat_input("Digite 'Aula 1' ou sua resposta...")
 
-# 3. Lógica de decisão: Prioriza o Áudio, depois o Texto
-prompt = None
-if audio_text:
-    prompt = audio_text
-elif input_text:
-    prompt = input_text
+prompt = audio_text if audio_text else input_text
 
-# 4. Se houver alguma entrada, processamos
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
     
     texto_min = prompt.lower()
-    instrucao_final = prompt
     foi_aula = False
     
-    # Checagem de Gatilhos de Aula
+    # 1. Checagem de Gatilho de Aula
     for aula, dados in CONTEUDO_AULAS.items():
         if aula in texto_min:
-            instrucao_final = (
-                f"SYSTEM: Ignore everything before. START SCENARIO NOW. "
-                f"Role: {dados['instrucao']} "
-                f"Level: {student_level}. Correct using brackets [ ]."
-            )
             foi_aula = True
-            st.toast(f"Iniciando {dados['cenario']}...", icon="🚀")
+            # REINICIALIZAÇÃO FORÇADA: Criamos um novo chat só para essa aula
+            prompt_roleplay = (
+                f"ACT NOW: {dados['instrucao']} "
+                f"Student Level: {student_level}. "
+                "CRITICAL RULE: Stay in character. Use brackets [ ] for corrections. "
+                "DO NOT say 'Understood'. Just start the conversation NOW in English."
+            )
+            
+            try:
+                # Substituímos a sessão atual por uma focada apenas no cenário
+                st.session_state.chat_session = client.chats.create(
+                    model="gemma-3-27b-it",
+                    config=types.GenerateContentConfig(temperature=0.9),
+                    history=[
+                        types.Content(role="user", parts=[types.Part(text=prompt_roleplay)]),
+                    ]
+                )
+                st.toast(f"Cenário Ativado: {dados['cenario']}", icon="🎭")
+            except Exception as e:
+                st.error(f"Erro ao mudar cenário: {e}")
             break
-    
-    if not foi_aula:
-        contexto_tema = f"Topic: {student_goal}." if student_goal else "General chat."
-        instrucao_final = (
-            f"{contexto_tema} Student says: '{prompt}'. "
-            f"Level: {student_level}. Correct using brackets [ ]."
-        )
 
+    # 2. Define o que enviar para a IA
+    # Se for aula, o primeiro comando já foi enviado na criação do chat acima.
+    # Se não for aula, enviamos o prompt normal.
     with st.chat_message("assistant"):
         try:
-            response = st.session_state.chat_session.send_message(instrucao_final)
-            texto_resposta = response.text
-            st.markdown(texto_resposta)
-            text_to_speech(texto_resposta)
-            st.session_state.messages.append({"role": "assistant", "content": texto_resposta})
+            if foi_aula:
+                # Pegamos a primeira resposta do novo chat de roleplay
+                response = st.session_state.chat_session.send_message("GO!")
+            else:
+                contexto = f"Context: {student_goal}. " if student_goal else ""
+                msg_envio = f"{contexto}Student Level: {student_level}. Correct in [ ]. Message: {prompt}"
+                response = st.session_state.chat_session.send_message(msg_envio)
+            
+            st.markdown(response.text)
+            text_to_speech(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
-            st.error(f"Erro na conexão com a IA: {e}")
+            st.error(f"Erro: {e}")
