@@ -116,7 +116,29 @@ if st.session_state.chat_session is None:
         st.error(f"Erro: {e}")
 
 # --- 6. INTERFACE DE CHAT ---
-if prompt := (audio_text or st.chat_input("Digite 'Aula 1' ou sua resposta...")):
+# --- 6. INTERFACE DE CHAT E VOZ (Versão Estabilizada) ---
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+st.write("---")
+
+# 1. Primeiro, criamos o componente de microfone
+# Importante: a variável audio_text PRECISA existir, mesmo que vazia
+audio_text = speech_to_text(start_prompt="🎤 Falar", stop_prompt="⏹️ Parar", language='en-US', key='speech')
+
+# 2. Criamos a caixa de texto
+input_text = st.chat_input("Digite 'Aula 1' ou sua resposta...")
+
+# 3. Lógica de decisão: Prioriza o Áudio, depois o Texto
+prompt = None
+if audio_text:
+    prompt = audio_text
+elif input_text:
+    prompt = input_text
+
+# 4. Se houver alguma entrada, processamos
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
     
@@ -124,39 +146,31 @@ if prompt := (audio_text or st.chat_input("Digite 'Aula 1' ou sua resposta..."))
     instrucao_final = prompt
     foi_aula = False
     
-    # 1. Checagem de Aula (Gatilho)
+    # Checagem de Gatilhos de Aula
     for aula, dados in CONTEUDO_AULAS.items():
         if aula in texto_min:
-            # Comando de "Reset de Personagem"
             instrucao_final = (
-                f"SYSTEM COMMAND: Forget all previous topics. "
-                f"ACT NOW: {dados['instrucao']} "
-                f"Level: {student_level}. Use brackets [ ] for corrections. "
-                "START THE CONVERSATION IN CHARACTER IMMEDIATELY."
+                f"SYSTEM: Ignore everything before. START SCENARIO NOW. "
+                f"Role: {dados['instrucao']} "
+                f"Level: {student_level}. Correct using brackets [ ]."
             )
             foi_aula = True
             st.toast(f"Iniciando {dados['cenario']}...", icon="🚀")
             break
     
-    # 2. Se não for aula, reforçamos o tema da barra lateral
     if not foi_aula:
-        # Se o aluno digitou algo na lateral, lembramos a IA
-        contexto_tema = f"Talking about {student_goal}." if student_goal else "General chat."
+        contexto_tema = f"Topic: {student_goal}." if student_goal else "General chat."
         instrucao_final = (
             f"{contexto_tema} Student says: '{prompt}'. "
             f"Level: {student_level}. Correct using brackets [ ]."
         )
 
-    # 3. Resposta da IA
     with st.chat_message("assistant"):
         try:
             response = st.session_state.chat_session.send_message(instrucao_final)
             texto_resposta = response.text
-            
-            # Limpeza de segurança (caso a IA responda "Ok, I will start")
-            # Se a resposta for curta e técnica, pedimos de novo ou limpamos
             st.markdown(texto_resposta)
             text_to_speech(texto_resposta)
             st.session_state.messages.append({"role": "assistant", "content": texto_resposta})
         except Exception as e:
-            st.error(f"Erro: {e}")
+            st.error(f"Erro na conexão com a IA: {e}")
