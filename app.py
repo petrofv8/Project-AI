@@ -116,38 +116,52 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 st.write("---")
-# Microfone para os alunos treinarem a fala
 audio_text = speech_to_text(start_prompt="🎤 Falar", stop_prompt="⏹️ Parar", language='en-US', key='speech')
 
 prompt = None
 if audio_text:
     prompt = audio_text
-elif input_text := st.chat_input("Ou digite aqui (ex: Aula 1)..."):
+elif input_text := st.chat_input("Digite 'Aula 1' ou 'Aula 2'..."):
     prompt = input_text
 
 if prompt:
+    # 1. Adiciona a mensagem do aluno na tela
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
     
-    # Lógica de Gatilhos de Aula
+    # 2. Lógica de Gatilho (Verifica se é comando de aula)
     texto_min = prompt.lower()
-    instrucao_final = prompt
+    foi_aula = False
     
     for aula, dados in CONTEUDO_AULAS.items():
         if aula in texto_min:
-            instrucao_final = f"START {aula.upper()}: {dados['instrucao']} Level: {student_level}."
+            # Comando "Bravo": Forçamos a IA a ignorar o texto e assumir o papel
+            instrucao_final = (
+                f"INSTRUCTION: Ignore previous context. Start NEW SCENARIO NOW. "
+                f"Role: {dados['instrucao']}. Level: {student_level}. "
+                "Correction Rule: Use brackets [ ] for every mistake. "
+                "Start the conversation in character now."
+            )
+            foi_aula = True
             st.toast(f"Iniciando {dados['cenario']}...", icon="🚀")
             break
+    
+    # Se não for aula, é apenas conversa normal
+    if not foi_aula:
+        instrucao_final = prompt
 
+    # 3. Resposta da IA
     with st.chat_message("assistant"):
         try:
+            # Enviamos o comando forçado para a IA
             response = st.session_state.chat_session.send_message(instrucao_final)
-            st.markdown(response.text)
-            text_to_speech(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
             
-            # Finalização sugerida após 6 trocas
-            if len(st.session_state.messages) > 12:
-                st.success("🎯 Teacher Petro: Você completou o ciclo desta aula! Que tal revisar o PDF ou tentar a próxima?")
+            # Limpamos a resposta caso ela venha com "Understood" ou confirmações chatas
+            texto_resposta = response.text
+            
+            st.markdown(texto_resposta)
+            text_to_speech(texto_resposta)
+            st.session_state.messages.append({"role": "assistant", "content": texto_resposta})
+            
         except Exception as e:
             st.error(f"Erro: {e}")
