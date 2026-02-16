@@ -116,13 +116,6 @@ if st.session_state.chat_session is None:
         st.error(f"Erro: {e}")
 
 # --- 6. INTERFACE DE CHAT ---
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-st.write("---")
-audio_text = speech_to_text(start_prompt="🎤 Falar", stop_prompt="⏹️ Parar", language='en-US', key='speech')
-
 if prompt := (audio_text or st.chat_input("Digite 'Aula 1' ou sua resposta...")):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
@@ -131,26 +124,39 @@ if prompt := (audio_text or st.chat_input("Digite 'Aula 1' ou sua resposta..."))
     instrucao_final = prompt
     foi_aula = False
     
-    # Checagem de Aula
+    # 1. Checagem de Aula (Gatilho)
     for aula, dados in CONTEUDO_AULAS.items():
         if aula in texto_min:
-            instrucao_final = f"NEW SCENARIO: {dados['instrucao']} Level: {student_level}."
+            # Comando de "Reset de Personagem"
+            instrucao_final = (
+                f"SYSTEM COMMAND: Forget all previous topics. "
+                f"ACT NOW: {dados['instrucao']} "
+                f"Level: {student_level}. Use brackets [ ] for corrections. "
+                "START THE CONVERSATION IN CHARACTER IMMEDIATELY."
+            )
             foi_aula = True
             st.toast(f"Iniciando {dados['cenario']}...", icon="🚀")
             break
     
-    # Se não for aula, reforçamos o tema da barra lateral no envio
+    # 2. Se não for aula, reforçamos o tema da barra lateral
     if not foi_aula:
+        # Se o aluno digitou algo na lateral, lembramos a IA
+        contexto_tema = f"Talking about {student_goal}." if student_goal else "General chat."
         instrucao_final = (
-            f"Context: {student_goal}. Student says: '{prompt}'. "
+            f"{contexto_tema} Student says: '{prompt}'. "
             f"Level: {student_level}. Correct using brackets [ ]."
         )
 
+    # 3. Resposta da IA
     with st.chat_message("assistant"):
         try:
             response = st.session_state.chat_session.send_message(instrucao_final)
-            st.markdown(response.text)
-            text_to_speech(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            texto_resposta = response.text
+            
+            # Limpeza de segurança (caso a IA responda "Ok, I will start")
+            # Se a resposta for curta e técnica, pedimos de novo ou limpamos
+            st.markdown(texto_resposta)
+            text_to_speech(texto_resposta)
+            st.session_state.messages.append({"role": "assistant", "content": texto_resposta})
         except Exception as e:
             st.error(f"Erro: {e}")
