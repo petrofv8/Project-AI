@@ -6,33 +6,36 @@ from streamlit_mic_recorder import speech_to_text
 import os
 import base64
 
-# --- 1. Configuração da Página e Estilo ---
+# --- 1. CONFIGURAÇÃO E DESIGN ---
 st.set_page_config(
-    page_title="Petro AI English", 
-    page_icon="🇬🇧", 
+    page_title="BUILDERS AI ACADEMY", 
+    page_icon="🎓", 
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
-# CSS Seguro e Blindado
 st.markdown("""
     <style>
-    /* Forçar visibilidade da barra lateral */
-    [data-testid="stSidebarNav"] { visibility: visible !important; }
-    
-    /* Estilização Geral */
     .stChatMessage { border-radius: 20px; padding: 15px; margin-bottom: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
     .stButton>button { border-radius: 10px; font-weight: bold; width: 100%; background-color: #4CAF50; color: white; }
-    
-    /* Esconder elementos desnecessários para alunos */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎓 English Tutor Agent")
+# --- 2. CENTRAL DE CONTEÚDO (Adicione novas aulas aqui) ---
+CONTEUDO_AULAS = {
+    "aula 1": {
+        "cenario": "Colega de trabalho no elevador",
+        "instrucao": "Scenario: You are a coworker in an elevator. Be brief, professional, and start with a casual greeting like 'Hey, going up?'."
+    },
+    "aula 2": {
+        "cenario": "Entrevista com Recrutador",
+        "instrucao": "Scenario: You are a professional recruiter. Ask about my profession and my passions. Be polite but formal."
+    }
+}
 
-# --- Funções de Apoio ---
+# --- 3. FUNÇÕES DE APOIO ---
 def text_to_speech(text):
     try:
         tts = gTTS(text=text, lang='en')
@@ -49,9 +52,9 @@ def reset_chat():
     st.session_state.chat_session = None
     st.session_state.messages = []
 
-# --- 2. Barra Lateral ---
+# --- 4. BARRA LATERAL ---
 with st.sidebar:
-    st.header("⚙️ Painel do Professor")
+    st.header("⚙️ Painel do Aluno")
     
     if "GOOGLE_API_KEY" in st.secrets:
         api_key = st.secrets["GOOGLE_API_KEY"]
@@ -59,17 +62,19 @@ with st.sidebar:
         api_key = st.text_input("API Key:", type="password")
 
     st.divider()
-    student_level = st.selectbox("Nível:", ["A1", "A2", "B1", "B2", "C1"], on_change=reset_chat)
-    student_goal = st.text_input("Objetivo:", "Conversation", on_change=reset_chat)
+    # Nível dinâmico que a IA irá seguir
+    student_level = st.selectbox(
+        "Seu Nível de Inglês:", 
+        ["A1 (Iniciante)", "A2 (Básico)", "B1 (Intermediário)", "B2 (Intermediário Superior)", "C1 (Avançado)"],
+        on_change=reset_chat
+    )
     
-    if st.button("📝 Gerar Exercícios"):
-        st.session_state.request_exercise = True
-    
-    if st.button("🔄 Reiniciar"):
+    st.divider()
+    if st.button("🔄 Reiniciar Conversa"):
         reset_chat()
         st.rerun()
 
-# --- 3. Inicialização e Conexão ---
+# --- 5. CONEXÃO E INICIALIZAÇÃO ---
 if not api_key:
     st.info("Insira sua chave na lateral para começar.")
     st.stop()
@@ -81,56 +86,68 @@ client = get_client(api_key)
 
 if "messages" not in st.session_state: st.session_state.messages = []
 if "chat_session" not in st.session_state: st.session_state.chat_session = None
-if "request_exercise" not in st.session_state: st.session_state.request_exercise = False
 
+# Inicializa o chat com as regras pedagógicas de 20 anos de experiência
 if st.session_state.chat_session is None:
-    prompt_base = f"You are a helpful English Teacher for Brazilians. Level: {student_level}. Goal: {student_goal}. Correct pronunciation and grammar."
+    master_prompt = (
+        f"You are a motivating English Teacher. Student level: {student_level}. "
+        "Rules: 1. Use short sentences. 2. If the student makes a mistake, respond naturally "
+        "and put the correction in brackets [ ]. Example: 'I'm fine too [I am fine too]'. "
+        "3. If the student speaks Portuguese, translate it and encourage English. "
+        "4. Never give grammar lectures, just keep the conversation flowing."
+    )
     try:
         st.session_state.chat_session = client.chats.create(
             model="gemma-3-27b-it",
-            config=types.GenerateContentConfig(temperature=0.7),
+            config=types.GenerateContentConfig(temperature=0.8),
             history=[
-                types.Content(role="user", parts=[types.Part(text=prompt_base)]),
-                types.Content(role="model", parts=[types.Part(text="Understood! Let's start.")])
+                types.Content(role="user", parts=[types.Part(text=master_prompt)]),
+                types.Content(role="model", parts=[types.Part(text="Understood Teacher Petro. I am ready.")])
             ]
         )
         if not st.session_state.messages:
-            st.session_state.messages.append({"role": "assistant", "content": "Hello! I'm your teacher. Let's practice!"})
+            st.session_state.messages.append({"role": "assistant", "content": f"Hello! I'm ready. Digite 'Aula 1' ou 'Aula 2' para começarmos o cenário!"})
     except Exception as e:
-        st.error(f"Erro na conexão: {e}")
+        st.error(f"Erro: {e}")
 
-# --- 4. Lógica de Exercícios ---
-if st.session_state.request_exercise:
-    with st.spinner("Preparing exercises..."):
-        resp = st.session_state.chat_session.send_message("Create 3 quick exercises based on our current conversation.")
-        st.session_state.messages.append({"role": "assistant", "content": f"🎯 **Practice!**\n\n{resp.text}"})
-        st.session_state.request_exercise = False
-
-# --- 5. Interface do Chat ---
+# --- 6. INTERFACE DE CHAT E VOZ ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# --- 🎤 Microfone e Entrada ---
 st.write("---")
+# Microfone para os alunos treinarem a fala
 audio_text = speech_to_text(start_prompt="🎤 Falar", stop_prompt="⏹️ Parar", language='en-US', key='speech')
 
 prompt = None
 if audio_text:
     prompt = audio_text
-elif input_text := st.chat_input("Ou digite aqui..."):
+elif input_text := st.chat_input("Ou digite aqui (ex: Aula 1)..."):
     prompt = input_text
 
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
     
+    # Lógica de Gatilhos de Aula
+    texto_min = prompt.lower()
+    instrucao_final = prompt
+    
+    for aula, dados in CONTEUDO_AULAS.items():
+        if aula in texto_min:
+            instrucao_final = f"START {aula.upper()}: {dados['instrucao']} Level: {student_level}."
+            st.toast(f"Iniciando {dados['cenario']}...", icon="🚀")
+            break
+
     with st.chat_message("assistant"):
-        final_prompt = prompt
-        if audio_text:
-            final_prompt = f"The student spoke: '{prompt}'. Correct it and respond."
-        
-        response = st.session_state.chat_session.send_message(final_prompt)
-        st.markdown(response.text)
-        text_to_speech(response.text)
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
+        try:
+            response = st.session_state.chat_session.send_message(instrucao_final)
+            st.markdown(response.text)
+            text_to_speech(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            
+            # Finalização sugerida após 6 trocas
+            if len(st.session_state.messages) > 12:
+                st.success("🎯 Teacher Petro: Você completou o ciclo desta aula! Que tal revisar o PDF ou tentar a próxima?")
+        except Exception as e:
+            st.error(f"Erro: {e}")
