@@ -34,8 +34,8 @@ CONTEUDO_AULAS = {
         "instrucao": "Scenario: New acquaintance. Ask about their job and keep it basic/friendly."
     },
     "aula 3": {
-        "cenario": "Penn Station (New York)",
-        "instrucao": "Scenario: Busy ticket agent at Penn Station. Ask where they are going."
+        "cenario": "Penn Station (New York) - Bilheteria",
+        "instrucao": "Scenario: You are a ticket agent at Penn Station. The student wants to buy a ticket. Focus on MONEY and PRICES. Tell the student the price of the ticket (e.g., $15.50) and ask how they want to pay. Use simple present questions."
     },
     "aula 4": {
         "cenario": "Recepção de Empresa de Tech",
