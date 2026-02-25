@@ -13,7 +13,10 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded"
 )
-
+st.divider()
+st.markdown("### 📚 Cronograma de Aulas")
+for aula, dados in CONTEUDO_AULAS.items():
+    st.write(f"**{aula.capitalize()}**: {dados['cenario']}")
 st.markdown("""
     <style>
     .stChatMessage { border-radius: 20px; padding: 15px; margin-bottom: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
@@ -27,11 +30,27 @@ st.markdown("""
 CONTEUDO_AULAS = {
     "aula 1": {
         "cenario": "Colega de trabalho no elevador",
-        "instrucao": "Scenario: You are a coworker in an elevator. Be brief, professional, and start with a casual greeting."
+        "instrucao": "Scenario: You are a coworker in an elevator. Be brief, professional, and start with a casual greeting like 'Hey, going up?'."
     },
     "aula 2": {
-        "cenario": "Entrevista com Recrutador",
-        "instrucao": "Scenario: You are a professional recruiter. Ask about my profession and passions."
+        "cenario": "Conversa básica de trabalho",
+        "instrucao": "Scenario: You are a new acquaintance at a professional event. Ask the student about their job and keep a basic, friendly conversation about their daily routine."
+    },
+    "aula 3": {
+        "cenario": "Penn Station (New York)",
+        "instrucao": "Scenario: You are a ticket agent at Penn Station, NYC. You are in a hurry because it is busy. Ask the student where they want to go and help them buy a ticket."
+    },
+    "aula 4": {
+        "cenario": "Recepção de Empresa de Tech",
+        "instrucao": "Scenario: You are a receptionist at a big tech company (like Google or Apple). Ask the student for their name and who they are here to see for their meeting."
+    },
+    "aula 5": {
+        "cenario": "Networking Coffee",
+        "instrucao": "Scenario: You are a professional having coffee with the student to discuss networking. Ask about their career goals and professional interests."
+    },
+    "aula 6": {
+        "cenario": "Office Tour (Video Call)",
+        "instrucao": "Scenario: You are a foreign colleague watching a video tour. The student is showing you their office. Ask questions about the desk, the equipment, and the people around."
     }
 }
 
